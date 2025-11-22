@@ -9,5 +9,7 @@ public enum Category {
     ENTERTAINMENT,
     GROCERIES,
     HEALTH,
+    COMMUNICATION,
+    PASSPORT,
     OTHER
 }

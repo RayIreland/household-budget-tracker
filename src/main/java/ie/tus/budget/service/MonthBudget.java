@@ -11,6 +11,12 @@ public class MonthBudget implements Billable {
 	private Money plan;
 	private final Expense[] expenses;   
     private int count = 0;
+    private Money total;
+    private Money remain;
+    
+    public YearMonth month() {
+		return this.month;
+	}
 	
 	public MonthBudget(YearMonth month, Money money) {
         this.month = month;          
@@ -24,18 +30,34 @@ public class MonthBudget implements Billable {
 	
 	public void addExpense(Expense expense) {
         if (count >= expenses.length) {
-//            throw new InvalidExpenseRuntimeException("Too many expenses for month " + month);
+            throw new IllegalStateException("Too many expenses for month " + month + " (max allowed: 100)");
         }
         expenses[count++] = expense;
     }
 	
 	@Override
-    public Money calculateTotal() {
+    public Money total() {
         Money total = Money.MoneyFromDouble(0.0,"EUR");
         for (int i = 0; i < count; i++) {
             total = total.add(expenses[i].money());
         }
-        return total;
+        return this.total = total;
     }
 	
+	public Money remain() {
+		if(this.total == null) {
+			total();
+		}
+		Money remain = new Money(plan.amount().subtract(this.total.amount()) ,"EUR");
+		return this.remain = remain;
+	}
+	
+	public boolean isOverBudget() {
+        return total().amount().compareTo(plan.amount()) > 0;
+    }
+	
+	@Override
+    public String toString() {
+        return plan.toString();
+    }
 }

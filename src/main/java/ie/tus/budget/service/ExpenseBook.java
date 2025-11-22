@@ -36,6 +36,6 @@ public class ExpenseBook {
     }
 
     public List<Expense> getAll() {
-        return List.copyOf(expenses); // defensive copy
+        return List.copyOf(expenses); 
     }
 }

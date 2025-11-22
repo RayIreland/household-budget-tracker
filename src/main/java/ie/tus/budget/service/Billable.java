@@ -4,6 +4,6 @@ import ie.tus.budget.model.Money;
 
 public interface Billable {
 
-	Money calculateTotal();
+	Money total();
 	
 }

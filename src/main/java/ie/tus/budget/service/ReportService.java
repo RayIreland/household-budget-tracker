@@ -1,5 +1,9 @@
 package ie.tus.budget.service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
@@ -8,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import ie.tus.budget.exception.ExportException;
 import ie.tus.budget.model.CardPayment;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
@@ -16,6 +21,11 @@ import ie.tus.budget.model.enums.Category;
 
 public class ReportService {
 
+	/**
+	 * map category to icon
+	 * @param category
+	 * @return
+	 */
 	public String categoryIcon(Category category) {
 		return switch (category) {
         case FOOD          -> "🍔";
@@ -32,6 +42,11 @@ public class ReportService {
 		};
     }
 	
+	/**
+	 * build month budget report
+	 * @param monthBudget
+	 * @return
+	 */
 	public String buildMonthBudgetReport(MonthBudget monthBudget) {
 		Objects.requireNonNull(monthBudget, "monthBudget must not be null");
 		StringBuilder builder = new StringBuilder();
@@ -51,6 +66,13 @@ public class ReportService {
 		return builder.toString();
 	}
 	
+	/**
+	 * build month report
+	 * list the expenses of the month
+	 * @param month
+	 * @param expenses
+	 * @return
+	 */
 	public String buildMonthReport(YearMonth month, List<Expense> expenses) {
 		Objects.requireNonNull(month, "month must not be null");
         Objects.requireNonNull(expenses, "allExpenses must not be null");
@@ -72,6 +94,13 @@ public class ReportService {
         return builder.toString();
     }
 	
+	/**
+	 * build month category summary
+	 * @param month
+	 * @param category
+	 * @param expenses
+	 * @return
+	 */
 	public String buildMonthCategorySummary(YearMonth month, Category category, List<Expense> expenses) {
 		Objects.requireNonNull(month, "month must not be null");
         Objects.requireNonNull(category, "category must not be null");
@@ -83,7 +112,6 @@ public class ReportService {
                 .toList();
         
         StringBuilder builder = new StringBuilder();
-
         builder.append("----- Category Summary (")
           	   .append(categoryIcon(category))
 	           .append(" ")
@@ -97,6 +125,7 @@ public class ReportService {
         	builder.append("----------------------------------------\n");
         	return builder.toString();
         }
+        
         double total = thisMonthCategoryExpenses.stream()
                 	   .mapToDouble(e -> e.money().amount().doubleValue()).sum();
         String currency = thisMonthCategoryExpenses.get(0).money().currency();
@@ -107,7 +136,6 @@ public class ReportService {
         	   .append("\n");
 
         builder.append("Transactions:\n");
-        
         thisMonthCategoryExpenses.forEach(e -> builder.append(
                 categoryIcon(e.category()))
                 .append(" ")
@@ -122,6 +150,14 @@ public class ReportService {
         return builder.toString();
 	}
 	
+	/**
+	 * build month insights
+	 * include highest cost category, payment mode count, 
+	 * average daily cost, total of transactions, largest cost
+	 * @param month
+	 * @param expenses
+	 * @return
+	 */
 	public String buildMonthInsights(YearMonth month, List<Expense> expenses) {
 		Objects.requireNonNull(month, "month must not be null");
         Objects.requireNonNull(expenses, "expenses must not be null");
@@ -130,12 +166,9 @@ public class ReportService {
                 .filter(e -> YearMonth.from(e.date()).equals(month))
                 .toList();
         
-        
         StringBuilder builder = new StringBuilder();
-
-        builder.append("----- Month Insights (")
-          .append(month)
-          .append(") -----\n");
+        builder.append("----- Month Insights (").append(month)
+          	   .append(") -----\n");
 
         if (thisMonthExpenses.isEmpty()) {
         	builder.append("No expense records for this month.\n");
@@ -144,16 +177,15 @@ public class ReportService {
         }
         
         DoubleSummaryStatistics stats = thisMonthExpenses.stream()
-                .mapToDouble(e -> e.money().amount().doubleValue())
-                .summaryStatistics();
+                .mapToDouble(e -> e.money().amount().doubleValue()).summaryStatistics();
         
         String currency = thisMonthExpenses.get(0).money().currency();
         
         Map<Category, Double> totalByCategory = 
         		thisMonthExpenses.stream()
 				                 .collect(Collectors.groupingBy(
-				                        Expense::category,
-				                        Collectors.summingDouble(e -> e.money().amount().doubleValue())
+				                          Expense::category,
+				                          Collectors.summingDouble(e -> e.money().amount().doubleValue())
 				                 ));
         
         var maxCategoryEntry = totalByCategory.entrySet().stream()
@@ -171,9 +203,9 @@ public class ReportService {
         Map<String, Long> countByPaymentType = 
         		thisMonthExpenses.stream()
 				                 .collect(Collectors.groupingBy(
-				                        e -> paymentLabel(e.paymentMode()),
-				                        Collectors.counting()
-				                 ));
+				                          e -> paymentLabel(e.paymentMode()),
+				                          Collectors.counting()
+				                  ));
         
         builder.append("💳 Payment methods: ");
         String paymentSummary = countByPaymentType.entrySet().stream()
@@ -214,8 +246,67 @@ public class ReportService {
         return switch (mode) {
             case CashPayment _ -> "Cash";
             case CardPayment _ -> "Card";
-            // 如果以后扩展新的实现，可以在这里继续加分支
+            //TODO 如果以后扩展新支付方式，可以在这里继续加
             default -> "Other";
         };
     }
+	
+	/**
+	 * export report
+	 * @param content
+	 * @param file
+	 */
+	public void exportReportToFile(String content, Path file) {
+        Objects.requireNonNull(content, "content must not be null");
+        Objects.requireNonNull(file, "targetFile must not be null");
+
+        try {
+            Path parent = file.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            Files.writeString(file, content, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new ExportException(
+                    "Failed to export report to file: " + file.toAbsolutePath(), e);
+        }
+    }
+	
+	/**
+	 * build month report
+	 * @param month
+	 * @param monthBudget
+	 * @param monthExpenses
+	 * @param targetFile
+	 * @return
+	 */
+	public String buildMonthReport(YearMonth month, MonthBudget monthBudget, List<Expense> monthExpenses,
+	          Path targetFile) {
+		StringBuilder builder = new StringBuilder();
+		//budget report
+		builder.append(buildMonthBudgetReport(monthBudget)).append(System.lineSeparator());
+		//month report
+		builder.append(buildMonthReport(month, monthExpenses)).append(System.lineSeparator());
+        //category summary
+		builder.append(buildMonthCategorySummary(month, Category.FOOD, monthExpenses)).append(System.lineSeparator());
+        //month insights
+		builder.append(buildMonthInsights(month, monthExpenses)).append(System.lineSeparator());
+		return builder.toString();
+	}
+	
+	/**
+	 * export month report
+	 * @param month
+	 * @param monthBudget
+	 * @param monthExpenses
+	 * @param file
+	 */
+	public void exportMonthReport(YearMonth month, MonthBudget monthBudget, List<Expense> monthExpenses,
+						          Path file) {
+		
+		String content = buildMonthReport(month, monthBudget, monthExpenses, file);
+		System.out.print(content);
+		exportReportToFile(content, file);
+	}
 }

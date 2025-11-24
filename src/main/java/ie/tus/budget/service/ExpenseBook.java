@@ -2,9 +2,14 @@ package ie.tus.budget.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
+import ie.tus.budget.exception.NotFoundException;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
 import ie.tus.budget.model.Money;
@@ -14,8 +19,8 @@ public class ExpenseBook {
 
 	private final List<Expense> expenses = new ArrayList<>();
 
-    public void addExpense(Expense e) {
-        expenses.add(e);
+    public void addExpense(Expense newExpense) {
+        expenses.add(newExpense);
     }
 
     public void addExpense(String title, double amount, Category category, LocalDate date) {
@@ -23,19 +28,79 @@ public class ExpenseBook {
         addExpense(new Expense(title, money, category, date, new CashPayment(money)));
     }
     
-    public void addExpenses(List<Expense> expenses) {
-    	expenses.addAll(expenses);
+    public void addExpenses(List<Expense> newExpenses) {
+    	Objects.requireNonNull(newExpenses, "expenses must not be null");
+    	expenses.addAll(newExpenses);
     }
     
-    public List<Expense> find(Predicate<Expense> filter) {
-        return expenses.stream().filter(filter).toList();
+    public void addExpenses(Expense... newExpenses) {
+        Objects.requireNonNull(newExpenses, "newExpenses must not be null");
+        for (var e : newExpenses) {
+            if (e == null) continue;
+            expenses.add(e);
+        }
+    }
+    
+    public List<Expense> find(Predicate<Expense> filter, Boolean asc) {
+    	Objects.requireNonNull(filter);
+    	Objects.requireNonNull(asc);
+        return orderExpensesByDate(expenses.stream().filter(filter).toList(), asc);
     }
 
-    public List<Expense> findByCategory(Category category) {
-        return find(e -> e.category() == category);
+    public List<Expense> findByCategory(Category category, Boolean asc) {
+    	Objects.requireNonNull(category);
+    	Objects.requireNonNull(asc);
+        return orderExpensesByDate(find(e -> e.category() == category, asc), asc);
     }
 
-    public List<Expense> getAll() {
-        return List.copyOf(expenses); 
+    public List<Expense> getAll(Boolean asc) {
+    	Objects.requireNonNull(asc);
+        return orderExpensesByDate(List.copyOf(expenses.stream().toList()), asc); 
     }
+    
+    public List<Expense> findByDateRange(LocalDate start, LocalDate end, Boolean asc) {
+    	
+        return orderExpensesByDate(expenses.stream()
+                .filter(e -> !e.date().isBefore(start) && !e.date().isAfter(end))
+                .toList(), asc);
+    }
+    
+    public List<Expense> orderExpensesByDate(List<Expense> expenses, Boolean asc) {
+    	List<Expense> results;
+    	if(asc) {
+    		results = expenses.stream()
+            .sorted(Comparator.comparing(Expense::date))
+            .toList();
+    	}else {
+    		results = expenses.stream()
+    	            .sorted(Comparator.comparing(Expense::date).reversed())
+    	            .toList();
+    	}
+        return results;
+    }
+    
+    public Expense deleteExpenseByIndex(int index) {
+        if (index < 0 || index >= expenses.size()) {
+            throw new NotFoundException(
+                    "No expense at index " + index + ". Current size: " + expenses.size());
+        }
+        return expenses.remove(index);
+    }
+    
+    public boolean deleteExpense(Expense expense) {
+        Objects.requireNonNull(expense, "expense must not be null");
+        return expenses.remove(expense);
+    }
+    
+    public Expense editExpenseByIndex(int index, UnaryOperator<Expense> editor) {
+        if (index < 0 || index >= expenses.size()) {
+            throw new NotFoundException("Index out of bounds: " + index);
+        }
+        Objects.requireNonNull(editor);
+        var original = expenses.get(index);
+        var updated = Objects.requireNonNull(editor.apply(original));
+        expenses.set(index, updated);
+        return updated;
+    }
+    
 }

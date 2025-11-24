@@ -1,10 +1,15 @@
 package ie.tus.budget.app;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
+import ie.tus.budget.exception.ExportException;
+import ie.tus.budget.exception.NotFoundException;
 import ie.tus.budget.model.CardPayment;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
@@ -30,12 +35,9 @@ public class BudgetApp {
                 "transport with cityLink",
                 cityLinkMoney,
                 Category.TRANSPORT,
-                LocalDate.of(2025, 11, 9),
+                LocalDate.of(2025, 10, 9),
                 new CashPayment(cityLinkMoney));
 		book.addExpense(cityLink);
-		
-		//simple add single
-		book.addExpense("shopping in Lidl", 32.15, Category.FOOD, LocalDate.of(2025, 11, 12));
 		
 		//add batch
 		List<Expense> expenses = new ArrayList<Expense>(2);
@@ -59,9 +61,18 @@ public class BudgetApp {
 		expenses.add(lunch);
 		book.addExpenses(expenses);
 		
+		//delete
+//		try {
+//		    Expense removed = book.deleteExpenseByIndex(0);
+//		    System.out.println("Deleted expense: " + removed);
+//		    System.out.println();
+//		} catch (NotFoundException e) {
+//		    System.out.println("Delete failed: " + e.getMessage());
+//		}
+		
 		YearMonth month = YearMonth.of(2025, 11);
 		
-		//fixed expense
+		//add fixed expense
 		var rentExpense = new RentExpense("Single-room Rent", Money.MoneyFromDouble(500, "EUR"), 30, 
 				"willow park Athlone Co.Westmeath Ireland");
 		var phonePlanExpense = new PhonePlanExpense("Phone Plan", Money.MoneyFromDouble(10.99, "EUR"), 1, "48 Company");
@@ -72,34 +83,76 @@ public class BudgetApp {
             book.addExpense(e);
         });
 		
-		//report
-		//set budget and judge if exceed
+		//simple add single
+		book.addExpense("shopping in Lidl", 32.15, Category.FOOD, LocalDate.of(2025, 11, 12));
+		
+//		//edit by index
+//		UnaryOperator<Expense> editor = old -> new Expense(
+//                "shopping in aldi",
+//                Money.MoneyFromDouble(old.money().amount().doubleValue() + 5.0, old.money().currency()),
+//                old.category(),
+//                old.date(),
+//                old.paymentMode()
+//        );
+//		var editedByIndex = book.editExpenseByIndex(0, editor);
+//	    System.out.println("Edit by index: " + editedByIndex);
+		
+		//query all
+		System.out.println("----- get all -----");
+		book.getAll(true).forEach(System.out::println);
+		System.out.println();
+		
+		//query by category
+		System.out.println("----- query by category -----");
+        var transportExp = book.findByCategory(Category.TRANSPORT, true);
+        transportExp.forEach(System.out::println);
+        System.out.println();
+        
+        //query by month
+        System.out.println("----- query by month -----");
+        var monthCondition = YearMonth.of(2025, 11);
+        Predicate<Expense> monthPredicate = exp -> YearMonth.from(exp.date()).equals(monthCondition);
+        var thisMonthExp = book.find(monthPredicate, false);
+        thisMonthExp.forEach(System.out::println);
+        System.out.println();
+        
+        //query by period
+        System.out.println("----- query by period -----");
+        LocalDate start = LocalDate.of(2025, 11, 1);
+        LocalDate end   = LocalDate.of(2025, 11, 15);
+        List<Expense> thisPeriodExp = book.findByDateRange(start, end, false);
+        thisPeriodExp.forEach(System.out::println);
+        System.out.println();
+		
+		//set budget
 		var monthBudget = new MonthBudget(month, Money.MoneyFromDouble(900, "EUR"));
-		List<Expense> thisMonthExpenses = book.getAll().stream()
+		
+		List<Expense> thisMonthExpenses = book.getAll(true).stream()
                 .filter(e -> YearMonth.from(e.date()).equals(month))
                 .toList();
 		thisMonthExpenses.forEach(monthBudget::addExpense);
 		
-		var report = new ReportService();
-		
-		//budget
-		System.out.println(report.buildMonthBudgetReport(monthBudget));
-		//month report
-        System.out.println(report.buildMonthReport(month, thisMonthExpenses));
-        //category summary
-        System.out.println(report.buildMonthCategorySummary(month, Category.FOOD, thisMonthExpenses));
-        //month insights
-        System.out.println(report.buildMonthInsights(month, thisMonthExpenses));
-        
-        //exception
+		//exception
         try {
         	int i = 0;
         	while(i < 100) {
         		monthBudget.addExpense(new Expense("Changes", Money.MoneyFromDouble(1, "EUR"),
                     Category.OTHER, LocalDate.now(), new CashPayment(Money.MoneyFromDouble(1,"EUR"))));
         	}
-        } catch (IllegalStateException ex) {
-            System.out.println("exception: " + ex.getMessage());
+        } catch (IllegalStateException e) {
+            System.out.println("exception: " + e.getMessage());
+            System.out.println();
+        }
+		
+        //report
+		var reportService = new ReportService();
+		Path path = Path.of("reports", "report_" + month + ".txt");
+        
+        try {
+        	reportService.exportMonthReport(month, monthBudget, thisMonthExpenses, path);
+            System.out.println("Report exported to: " + path.toAbsolutePath());
+        } catch (ExportException e) {
+            System.err.println("Export failed: " + e.getMessage());
         }
 
 	}

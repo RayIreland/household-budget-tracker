@@ -10,5 +10,10 @@ public record Expense(
         Category category,
         LocalDate date,
         PaymentMode paymentMode) {
+	
+
+	public LocalDate date() {
+        return date;
+    }
 
 }

@@ -99,26 +99,26 @@ class ExpenseBookTest {
 		
 		var monthCondition = YearMonth.of(2025, 10);
         Predicate<Expense> monthPredicate = exp -> YearMonth.from(exp.date()).equals(monthCondition);
-		book.find(monthPredicate).forEach(System.out::println);
+		book.find(monthPredicate, true).forEach(System.out::println);
 	}
 
 	@Test
 	void testFindByCategory() {
-		book.findByCategory(Category.ENTERTAINMENT).forEach(System.out::println);
+		book.findByCategory(Category.ENTERTAINMENT, true).forEach(System.out::println);
 	}
 
 	@Test
 	void testGetAll() {
-		book.getAll().forEach(System.out::println);
+		book.getAll(true).forEach(System.out::println);
 	}
 
 	@Test
 	void testDeleteExpenseByIndex() {
-		book.getAll().forEach(System.out::println);
+		book.getAll(true).forEach(System.out::println);
 		System.out.println();
 		System.out.println("delete: " + book.deleteExpenseByIndex(0));
 		System.out.println();
-		book.getAll().forEach(System.out::println);
+		book.getAll(true).forEach(System.out::println);
 	}
 
 	@Test
@@ -128,7 +128,7 @@ class ExpenseBookTest {
 
 	@Test
 	void testEditExpenseByIndex() {
-		book.getAll().forEach(System.out::println);
+		book.getAll(true).forEach(System.out::println);
 		System.out.println();
 		UnaryOperator<Expense> editor = old -> new Expense(
               "shopping in tesco",
@@ -140,7 +140,7 @@ class ExpenseBookTest {
 		var editedByIndex = book.editExpenseByIndex(0, editor);
 		System.out.println("edit: " + editedByIndex);
 		System.out.println();
-		book.getAll().forEach(System.out::println);
+		book.getAll(true).forEach(System.out::println);
 	}
 
 }

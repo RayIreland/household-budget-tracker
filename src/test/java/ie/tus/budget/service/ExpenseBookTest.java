@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ie.tus.budget.exception.NotFoundException;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
 import ie.tus.budget.model.Money;
@@ -26,7 +29,7 @@ class ExpenseBookTest {
         book.addExpense("Burger King", 12, Category.FOOD, LocalDate.of(2025, 10, 5));
         
         Money localLinkMoney = Money.MoneyFromDouble(1, "EUR");
-		var localLink = new Expense(
+		var localLink = Expense.build(
                 "transport with A2 localLink",
                 localLinkMoney,
                 Category.TRANSPORT,
@@ -34,7 +37,7 @@ class ExpenseBookTest {
                 new CashPayment(localLinkMoney));
 		
 		Money drinksMoney = Money.MoneyFromDouble(15, "EUR");
-		var drinks = new Expense(
+		var drinks = Expense.build(
                 "drinks at bar",
                 drinksMoney,
                 Category.ENTERTAINMENT,
@@ -42,7 +45,7 @@ class ExpenseBookTest {
                 new CashPayment(drinksMoney));
 		
 		Money shoppingMoney = Money.MoneyFromDouble(23.4, "EUR");
-		var shopping = new Expense(
+		var shopping = Expense.build(
                 "shopping at asian supermarket",
                 shoppingMoney,
                 Category.GROCERIES,
@@ -55,7 +58,7 @@ class ExpenseBookTest {
 	@Test
 	void testAddExpenseExpense() {
 		Money localLinkMoney = Money.MoneyFromDouble(1, "EUR");
-		var localLink = new Expense(
+		var localLink = Expense.build(
                 "transport with A2 localLink",
                 localLinkMoney,
                 Category.TRANSPORT,
@@ -77,7 +80,7 @@ class ExpenseBookTest {
 	@Test
 	void testAddExpensesVarargs() {
 		Money drinksMoney = Money.MoneyFromDouble(15, "EUR");
-		var drinks = new Expense(
+		var drinks = Expense.build(
                 "drinks at bar",
                 drinksMoney,
                 Category.ENTERTAINMENT,
@@ -85,7 +88,7 @@ class ExpenseBookTest {
                 new CashPayment(drinksMoney));
 		
 		Money shoppingMoney = Money.MoneyFromDouble(23.4, "EUR");
-		var shopping = new Expense(
+		var shopping = Expense.build(
                 "shopping at asian supermarket",
                 shoppingMoney,
                 Category.GROCERIES,
@@ -114,9 +117,18 @@ class ExpenseBookTest {
 
 	@Test
 	void testDeleteExpenseByIndex() {
-		book.getAll(true).forEach(System.out::println);
+		List<Expense> expenses = book.getAll(true);
+		expenses.forEach(System.out::println);
 		System.out.println();
-		System.out.println("delete: " + book.deleteExpenseByIndex(0));
+		if(expenses == null | expenses.size() == 0) {
+			throw new NotFoundException("expenses must not be null");
+		}
+		try {
+	//		int value = ThreadLocalRandom.current().nextInt(0, expenses.size() - 1);
+			System.out.println("delete: " + book.deleteById(expenses.get(0).id()));
+		} catch (NotFoundException e) {
+		    System.err.println("Not found: " + e.getMessage());
+		}
 		System.out.println();
 		book.getAll(true).forEach(System.out::println);
 	}
@@ -128,16 +140,20 @@ class ExpenseBookTest {
 
 	@Test
 	void testEditExpenseByIndex() {
-		book.getAll(true).forEach(System.out::println);
+		List<Expense> expenses = book.getAll(true);
+		expenses.forEach(System.out::println);
 		System.out.println();
-		UnaryOperator<Expense> editor = old -> new Expense(
+		if(expenses == null | expenses.size() == 0) {
+			throw new NotFoundException("expenses must not be null");
+		}
+		UnaryOperator<Expense> editor = old -> Expense.build(
               "shopping in tesco",
               Money.MoneyFromDouble(old.money().amount().doubleValue() + 20, old.money().currency()),
               old.category(),
               old.date(),
               old.paymentMode()
         );
-		var editedByIndex = book.editExpenseByIndex(0, editor);
+		var editedByIndex = book.editById(expenses.get(0).id(), editor);
 		System.out.println("edit: " + editedByIndex);
 		System.out.println();
 		book.getAll(true).forEach(System.out::println);

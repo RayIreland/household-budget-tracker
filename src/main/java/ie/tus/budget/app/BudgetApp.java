@@ -5,11 +5,10 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 
 import ie.tus.budget.exception.ExportException;
-import ie.tus.budget.exception.NotFoundException;
 import ie.tus.budget.model.CardPayment;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
@@ -31,7 +30,7 @@ public class BudgetApp {
 		
 		//add single
 		Money cityLinkMoney = Money.MoneyFromDouble(11, "EUR");
-		var cityLink = new Expense(
+		var cityLink = Expense.build(
                 "transport with cityLink",
                 cityLinkMoney,
                 Category.TRANSPORT,
@@ -39,63 +38,44 @@ public class BudgetApp {
                 new CashPayment(cityLinkMoney));
 		book.addExpense(cityLink);
 		
-		//add batch
-		List<Expense> expenses = new ArrayList<Expense>(2);
+		//simple add single
+		book.addExpense("shopping in Lidl", 32.15, Category.FOOD, LocalDate.of(2025, 11, 12));
 		
+		//add varargs
 		Money haircutMoney = Money.MoneyFromDouble(15, "EUR");
-		var haircut = new Expense(
+		var haircut = Expense.build(
                 "Haircut",
                 haircutMoney,
                 Category.PERSONAL_CARE,
                 LocalDate.of(2025, 11, 28),
                 new CashPayment(haircutMoney));
-		expenses.add(haircut);
 		
 		Money lunchMoney = Money.MoneyFromDouble(16, "EUR");
-		var lunch = new Expense(
+		var lunch = Expense.build(
                 "Lamb doner at Raytoon",
                 lunchMoney,
                 Category.FOOD,
                 LocalDate.of(2025, 11, 9),
                 new CardPayment(lunchMoney,"9988"));
-		expenses.add(lunch);
-		book.addExpenses(expenses);
-		
-		//delete
-//		try {
-//		    Expense removed = book.deleteExpenseByIndex(0);
-//		    System.out.println("Deleted expense: " + removed);
-//		    System.out.println();
-//		} catch (NotFoundException e) {
-//		    System.out.println("Delete failed: " + e.getMessage());
-//		}
+		book.addExpenses(haircut, lunch);
 		
 		YearMonth month = YearMonth.of(2025, 11);
 		
 		//add fixed expense
 		var rentExpense = new RentExpense("Single-room Rent", Money.MoneyFromDouble(500, "EUR"), 30, 
 				"willow park Athlone Co.Westmeath Ireland");
-		var phonePlanExpense = new PhonePlanExpense("Phone Plan", Money.MoneyFromDouble(10.99, "EUR"), 1, "48 Company");
+		var phonePlanExpense = new PhonePlanExpense("Phone Plan", Money.MoneyFromDouble(10.99, "EUR"), 1, "My48");
 		List<FixedExpense> fixedExpenses = List.of(rentExpense, phonePlanExpense);
-		fixedExpenses.forEach(rp -> {
-            Expense e = rp.addExpenseForMonth(month,
-                    new CardPayment(rp.expenseOfMonth(), "8899"));
+		fixedExpenses.forEach(fe -> {
+            Expense e = fe.addExpenseForMonth(month, new CardPayment(fe.expenseOfMonth(), "8899"));
             book.addExpense(e);
         });
 		
-		//simple add single
-		book.addExpense("shopping in Lidl", 32.15, Category.FOOD, LocalDate.of(2025, 11, 12));
+		//delete
+		//see unitTest
 		
-//		//edit by index
-//		UnaryOperator<Expense> editor = old -> new Expense(
-//                "shopping in aldi",
-//                Money.MoneyFromDouble(old.money().amount().doubleValue() + 5.0, old.money().currency()),
-//                old.category(),
-//                old.date(),
-//                old.paymentMode()
-//        );
-//		var editedByIndex = book.editExpenseByIndex(0, editor);
-//	    System.out.println("Edit by index: " + editedByIndex);
+		//edit
+		//see unitTest
 		
 		//query all
 		System.out.println("----- get all -----");
@@ -136,7 +116,7 @@ public class BudgetApp {
         try {
         	int i = 0;
         	while(i < 100) {
-        		monthBudget.addExpense(new Expense("Changes", Money.MoneyFromDouble(1, "EUR"),
+        		monthBudget.addExpense(Expense.build("Changes", Money.MoneyFromDouble(1, "EUR"),
                     Category.OTHER, LocalDate.now(), new CashPayment(Money.MoneyFromDouble(1,"EUR"))));
         	}
         } catch (IllegalStateException e) {

@@ -22,7 +22,7 @@ public abstract class FixedExpense {
     
     public Expense addExpenseForMonth(YearMonth month, PaymentMode mode) {
         LocalDate date = LocalDate.of(month.getYear(), month.getMonth(), dayOfMonth);
-        return new Expense(name, expenseOfMonth, category(), date, mode);
+        return Expense.build(name, expenseOfMonth, category(), date, mode);
     }
 
     public String name() {

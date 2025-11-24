@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -17,7 +18,7 @@ import ie.tus.budget.model.enums.Category;
 
 public class ExpenseBook {
 
-	private final List<Expense> expenses = new ArrayList<>();
+	private List<Expense> expenses = new ArrayList<>();
 
     public void addExpense(Expense newExpense) {
         expenses.add(newExpense);
@@ -25,7 +26,7 @@ public class ExpenseBook {
 
     public void addExpense(String title, double amount, Category category, LocalDate date) {
         var money = Money.MoneyFromDouble(amount, "EUR");
-        addExpense(new Expense(title, money, category, date, new CashPayment(money)));
+        addExpense(new Expense(UUID.randomUUID(), title, money, category, date, new CashPayment(money)));
     }
     
     public void addExpenses(List<Expense> newExpenses) {
@@ -79,12 +80,36 @@ public class ExpenseBook {
         return results;
     }
     
-    public Expense deleteExpenseByIndex(int index) {
-        if (index < 0 || index >= expenses.size()) {
-            throw new NotFoundException(
-                    "No expense at index " + index + ". Current size: " + expenses.size());
+    public Expense deleteById(UUID id) {
+        Objects.requireNonNull(id, "id must not be null");
+        int idx = indexOfId(id);
+        if (idx < 0) {
+            throw new NotFoundException("Expense with id " + id + " not found.");
         }
-        return expenses.remove(index);
+        return expenses.remove(idx);
+    }
+    
+    public Expense editById(UUID id, UnaryOperator<Expense> editor) {
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(editor, "editor must not be null");
+
+        int idx = indexOfId(id);
+        if (idx < 0) {
+            throw new NotFoundException("Expense with id " + id + " not found.");
+        }
+
+        Expense origin = expenses.get(idx);
+        Expense update = Objects.requireNonNull(editor.apply(origin), "editor returned null");
+        if (!origin.id().equals(update.id())) {
+        	update = new Expense(origin.id(),
+        			update.title(),
+        			update.money(),
+        			update.category(),
+        			update.date(),
+        			update.paymentMode());
+        }
+        expenses.set(idx, update);
+        return update;
     }
     
     public boolean deleteExpense(Expense expense) {
@@ -92,15 +117,11 @@ public class ExpenseBook {
         return expenses.remove(expense);
     }
     
-    public Expense editExpenseByIndex(int index, UnaryOperator<Expense> editor) {
-        if (index < 0 || index >= expenses.size()) {
-            throw new NotFoundException("Index out of bounds: " + index);
+    protected int indexOfId(UUID id) {
+        for (int i = 0; i < expenses.size(); i++) {
+            if (expenses.get(i).id().equals(id)) return i;
         }
-        Objects.requireNonNull(editor);
-        var original = expenses.get(index);
-        var updated = Objects.requireNonNull(editor.apply(original));
-        expenses.set(index, updated);
-        return updated;
+        return -1;
     }
     
 }

@@ -18,7 +18,7 @@ public final class CardPayment implements PaymentMode {
         return "Card ****" + last4digits + " " + money;
     }
     
-    public String getLast4digits() {
+    public String last4digits() {
         return last4digits;
     }
 }

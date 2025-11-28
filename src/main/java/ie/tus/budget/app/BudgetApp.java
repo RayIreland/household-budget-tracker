@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import ie.tus.budget.exception.ExportException;
+import ie.tus.budget.exception.TooManyItemsException;
 import ie.tus.budget.model.CardPayment;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
@@ -117,7 +118,7 @@ public class BudgetApp {
         		monthBudget.addExpense(Expense.build("Changes", Money.MoneyFromDouble(1, "EUR"),
                     Category.OTHER, LocalDate.now(), new CashPayment(Money.MoneyFromDouble(1,"EUR"))));
         	}
-        } catch (IllegalStateException e) {
+        } catch (TooManyItemsException e) {
             System.out.println("exception: " + e.getMessage());
             System.out.println();
         }

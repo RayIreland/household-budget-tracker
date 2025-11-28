@@ -17,7 +17,7 @@ import ie.tus.budget.model.enums.Category;
 
 public class ExpenseBook {
 
-	private List<Expense> expenses = new ArrayList<>();
+	private final List<Expense> expenses = new ArrayList<>();
 
     public void addExpense(Expense newExpense) {
         expenses.add(newExpense);
@@ -67,16 +67,12 @@ public class ExpenseBook {
     
     public List<Expense> orderExpensesByDate(List<Expense> expenses, Boolean asc) {
     	List<Expense> results;
-    	if(asc) {
-    		results = expenses.stream()
-            .sorted(Comparator.comparing(Expense::date))
-            .toList();
-    	}else {
-    		results = expenses.stream()
-    	            .sorted(Comparator.comparing(Expense::date).reversed())
-    	            .toList();
+    	Comparator<Expense> comparator = Comparator.comparing(Expense::date);
+    	if (!asc) {
+    	    comparator = comparator.reversed();
     	}
-        return results;
+    	results = expenses.stream().sorted(comparator).toList();
+        return List.copyOf(results);
     }
     
     public Expense deleteById(UUID id) {

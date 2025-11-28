@@ -13,11 +13,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import ie.tus.budget.exception.ExportException;
-import ie.tus.budget.model.CardPayment;
-import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
 import ie.tus.budget.model.MonthBudget;
-import ie.tus.budget.model.PaymentMode;
 import ie.tus.budget.model.enums.Category;
 
 public class ReportService {
@@ -204,7 +201,7 @@ public class ReportService {
         Map<String, Long> countByPaymentType = 
         		thisMonthExpenses.stream()
 				                 .collect(Collectors.groupingBy(
-				                          e -> paymentLabel(e.paymentMode()),
+				                          e -> e.paymentMode().identityKey(),
 				                          Collectors.counting()
 				                  ));
         
@@ -242,15 +239,6 @@ public class ReportService {
         builder.append("--------------------------------------\n");
         return builder.toString();
 	}
-	
-	private String paymentLabel(PaymentMode mode) {
-        return switch (mode) {
-            case CashPayment _ -> "Cash";
-            case CardPayment _ -> "Card";
-            //If new payment methods are expanded in the future, you can continue to add them here
-            default -> "Other";
-        };
-    }
 	
 	/**
 	 * export report

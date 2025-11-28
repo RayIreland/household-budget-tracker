@@ -1,6 +1,9 @@
 package ie.tus.budget.model;
 
 import java.time.YearMonth;
+import java.util.Arrays;
+
+import ie.tus.budget.exception.TooManyItemsException;
 
 public class MonthBudget implements Billable {
 
@@ -14,6 +17,10 @@ public class MonthBudget implements Billable {
     public YearMonth month() {
 		return this.month;
 	}
+    
+    public Expense[] expenses() {
+        return Arrays.copyOf(expenses, count);
+    }
 	
 	public MonthBudget(YearMonth month, Money money) {
         this.month = month;          
@@ -27,10 +34,11 @@ public class MonthBudget implements Billable {
 	
 	public void addExpense(Expense expense) {
         if (count >= expenses.length) {
-            throw new IllegalStateException("Too many expenses for month " + month + " (max allowed: 100)");
+            throw new TooManyItemsException("Too many expenses for month " + month + " (max allowed: 100)");
         }
         expenses[count++] = expense;
     }
+	
 	
 	@Override
     public Money total() {

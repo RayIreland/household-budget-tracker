@@ -1,7 +1,5 @@
 package ie.tus.budget.service;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -70,11 +68,6 @@ class ExpenseBookTest {
 	void testAddExpenseStringDoubleCategoryLocalDate() {
 		book.addExpense("Burger King", 12, Category.FOOD, LocalDate.of(2025, 11, 5));
 	}
-
-	@Test
-	void testAddExpenses() {
-		fail("Not yet implemented");
-	}
 	
 	@Test
 	void testAddExpensesVarargs() {
@@ -130,11 +123,6 @@ class ExpenseBookTest {
 		}
 		System.out.println();
 		book.getAll(true).forEach(System.out::println);
-	}
-
-	@Test
-	void testDeleteExpense() {
-		fail("Not yet implemented");
 	}
 
 	@Test

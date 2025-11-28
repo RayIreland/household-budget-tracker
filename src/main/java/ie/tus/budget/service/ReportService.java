@@ -16,6 +16,7 @@ import ie.tus.budget.exception.ExportException;
 import ie.tus.budget.model.CardPayment;
 import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
+import ie.tus.budget.model.MonthBudget;
 import ie.tus.budget.model.PaymentMode;
 import ie.tus.budget.model.enums.Category;
 
@@ -246,7 +247,7 @@ public class ReportService {
         return switch (mode) {
             case CashPayment _ -> "Cash";
             case CardPayment _ -> "Card";
-            //TODO 如果以后扩展新支付方式，可以在这里继续加
+            //If new payment methods are expanded in the future, you can continue to add them here
             default -> "Other";
         };
     }

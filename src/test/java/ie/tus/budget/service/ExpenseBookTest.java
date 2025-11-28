@@ -1,11 +1,10 @@
 package ie.tus.budget.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 

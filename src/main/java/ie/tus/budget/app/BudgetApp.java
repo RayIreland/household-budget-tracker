@@ -3,9 +3,7 @@ package ie.tus.budget.app;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Predicate;
 
 import ie.tus.budget.exception.ExportException;
@@ -14,11 +12,11 @@ import ie.tus.budget.model.CashPayment;
 import ie.tus.budget.model.Expense;
 import ie.tus.budget.model.FixedExpense;
 import ie.tus.budget.model.Money;
+import ie.tus.budget.model.MonthBudget;
 import ie.tus.budget.model.PhonePlanExpense;
 import ie.tus.budget.model.RentExpense;
 import ie.tus.budget.model.enums.Category;
 import ie.tus.budget.service.ExpenseBook;
-import ie.tus.budget.service.MonthBudget;
 import ie.tus.budget.service.ReportService;
 
 public class BudgetApp {

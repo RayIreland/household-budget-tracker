@@ -1,15 +1,12 @@
-package ie.tus.budget.service;
+package ie.tus.budget.model;
 
 import java.time.YearMonth;
 
-import ie.tus.budget.model.Expense;
-import ie.tus.budget.model.Money;
-
 public class MonthBudget implements Billable {
 
-	private final YearMonth month;
+	private YearMonth month;
 	private Money plan;
-	private final Expense[] expenses;   
+	private Expense[] expenses;
     private int count = 0;
     private Money total;
     private Money remain;
@@ -37,6 +34,9 @@ public class MonthBudget implements Billable {
 	
 	@Override
     public Money total() {
+		if(this.total != null) {
+			return this.total;
+		}
         Money total = Money.MoneyFromDouble(0.0,"EUR");
         for (int i = 0; i < count; i++) {
             total = total.add(expenses[i].money());
@@ -45,6 +45,9 @@ public class MonthBudget implements Billable {
     }
 	
 	public Money remain() {
+		if(this.remain != null) {
+			return this.remain;
+		}
 		if(this.total == null) {
 			total();
 		}
